@@ -4,6 +4,7 @@ import {
     Sse,
     UseGuards,
     NotFoundException,
+    ForbiddenException,
     Request,
     MessageEvent,
     Header,
@@ -29,8 +30,6 @@ export class SseController {
     @Sse('executions/:executionId')
     @UseGuards(JwtAuthGuard)
     @ApiCookieAuth('access_token')
-    @Header('Access-Control-Allow-Origin', 'http://localhost:5173')
-    @Header('Access-Control-Allow-Credentials', 'true')
     @Header('Cache-Control', 'no-cache, no-transform')
     @Header('Connection', 'keep-alive')
     @Header('X-Accel-Buffering', 'no')
@@ -40,25 +39,46 @@ export class SseController {
         description: 'Server-Sent Events stream for execution',
         content: { 'text/event-stream': {} },
     })
-    executionStream(@Param('executionId') executionId: string): Observable<MessageEvent> {
-        const stream = this.grpcExecutorService.getExecutionStream(executionId);
-        if (!stream) {
+    executionStream(
+        @Param('executionId') executionId: string,
+        @Request() req: { user?: { id?: string; role?: UserRole } },
+    ): Observable<MessageEvent> {
+        const session = this.grpcExecutorService.getExecutionSession(executionId);
+        if (!session) {
             throw new NotFoundException(`No active execution with ID: ${executionId}`);
         }
 
-        return stream.pipe(
-            map((event: any) => ({
+        const user = req.user;
+        const isOwner = session.ownerUserId !== undefined && session.ownerUserId === user?.id;
+        const isPrivileged = user?.role === UserRole.MODERATOR || user?.role === UserRole.ADMIN;
+
+        if (!isOwner && !isPrivileged) {
+            throw new ForbiddenException('You do not have access to this execution stream');
+        }
+
+        const execution$ = session.subject.pipe(
+            map((event) => ({
                 data: JSON.stringify(event),
                 type: event.type,
             })),
-        ) as Observable<MessageEvent>;
+        );
+
+        const ping$ = interval(10000).pipe(
+            map(() => ({
+                data: JSON.stringify({
+                    type: 'ping',
+                    timestamp: new Date().toISOString(),
+                }),
+                type: 'ping',
+            })),
+        );
+
+        return merge(execution$, ping$) as Observable<MessageEvent>;
     }
 
     @Sse('events')
     @UseGuards(JwtAuthGuard)
     @ApiCookieAuth('access_token')
-    @Header('Access-Control-Allow-Origin', 'http://localhost:5173')
-    @Header('Access-Control-Allow-Credentials', 'true')
     @Header('Cache-Control', 'no-cache, no-transform')
     @Header('Connection', 'keep-alive')
     @Header('X-Accel-Buffering', 'no')
@@ -68,7 +88,7 @@ export class SseController {
         description: 'Server-Sent Events for user notifications',
         content: { 'text/event-stream': {} },
     })
-    userEvents(@Request() req: any): Observable<MessageEvent> {
+    userEvents(@Request() req: { user?: { id?: string } }): Observable<MessageEvent> {
         const hello$ = of({
             data: JSON.stringify({
                 type: 'connected',
@@ -96,8 +116,6 @@ export class SseController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.MODERATOR, UserRole.ADMIN)
     @ApiCookieAuth('access_token')
-    @Header('Access-Control-Allow-Origin', 'http://localhost:5173')
-    @Header('Access-Control-Allow-Credentials', 'true')
     @Header('Cache-Control', 'no-cache, no-transform')
     @Header('Connection', 'keep-alive')
     @Header('X-Accel-Buffering', 'no')

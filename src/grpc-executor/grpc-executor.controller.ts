@@ -12,11 +12,10 @@ import { Throttle } from '@nestjs/throttler';
 import { GrpcExecutorService } from './grpc-executor.service';
 import { ExecuteGrpcDto } from './dto/execute-grpc.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { Reflector } from '@nestjs/core';
 
 @ApiTags('grpc')
 @Controller('grpc')
-@UseGuards(new JwtAuthGuard(new Reflector()))
+@UseGuards(JwtAuthGuard)
 @ApiCookieAuth('access_token')
 export class GrpcExecutorController {
   constructor(private readonly grpcExecutorService: GrpcExecutorService) {}

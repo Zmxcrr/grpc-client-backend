@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsAllowedTargetHost } from '../validators/target-host.validator';
 
 export class ExecuteGrpcDto {
   @ApiProperty({ example: 'uuid-of-proto-schema' })
@@ -14,8 +15,10 @@ export class ExecuteGrpcDto {
   @IsString()
   methodName: string;
 
-  @ApiProperty({ example: 'localhost:50051' })
+  @ApiProperty({ example: 'example.com:50051', description: 'Remote gRPC server host:port. Local/private addresses are blocked by default.' })
   @IsString()
+  @IsNotEmpty()
+  @IsAllowedTargetHost()
   targetHost: string;
 
   @ApiPropertyOptional({ example: { 'Authorization': 'Bearer token' } })

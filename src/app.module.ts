@@ -70,6 +70,7 @@ import { GrpcCallLog } from './grpc-call-logs/entities/grpc-call-log.entity';
       driver: ApolloDriver,
       imports: [ConfigModule],
       inject: [ConfigService],
+        introspection: true,
       useFactory: (config: ConfigService) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,

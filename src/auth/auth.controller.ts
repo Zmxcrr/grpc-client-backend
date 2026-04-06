@@ -19,10 +19,12 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     private getAccessCookieOptions(): CookieOptions {
+        const isProduction = process.env.NODE_ENV === 'production';
+
         return {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         };

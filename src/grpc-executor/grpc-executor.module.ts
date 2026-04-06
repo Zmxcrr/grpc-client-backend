@@ -4,11 +4,12 @@ import { GrpcExecutorService } from './grpc-executor.service';
 import { ProtoModule } from '../proto/proto.module';
 import { HistoryModule } from '../history/history.module';
 import { GrpcCallLogsModule } from '../grpc-call-logs/grpc-call-logs.module';
+import {IsAllowedTargetHostConstraint} from "./validators/target-host.validator";
 
 @Module({
   imports: [ProtoModule, HistoryModule, GrpcCallLogsModule],
   controllers: [GrpcExecutorController],
-  providers: [GrpcExecutorService],
+  providers: [GrpcExecutorService, IsAllowedTargetHostConstraint],
   exports: [GrpcExecutorService],
 })
 export class GrpcExecutorModule {}

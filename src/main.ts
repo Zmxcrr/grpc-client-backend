@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { useContainer } from 'class-validator';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -11,6 +12,8 @@ async function bootstrap() {
         console.error('FATAL: JWT_SECRET environment variable is not set in production mode. Exiting.');
         process.exit(1);
     }
+
+    useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
     app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));

@@ -35,8 +35,8 @@ export class GrpcCallLogsService {
   async findAll(options?: { limit?: number; offset?: number; status?: string }): Promise<GrpcCallLog[]> {
     const findOptions: FindManyOptions<GrpcCallLog> = {
       order: { createdAt: 'DESC' },
-      take: options?.limit || 50,
-      skip: options?.offset || 0,
+        take: options?.limit ?? 50,
+        skip: options?.offset ?? 0,
     };
     if (options?.status) {
       findOptions.where = { status: options.status };

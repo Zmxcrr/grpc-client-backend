@@ -70,12 +70,12 @@ import { GrpcCallLog } from './grpc-call-logs/entities/grpc-call-log.entity';
       driver: ApolloDriver,
       imports: [ConfigModule],
       inject: [ConfigService],
-        introspection: true,
       useFactory: (config: ConfigService) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,
         playground: config.get('NODE_ENV') !== 'production',
-        context: ({ req, res }) => ({ req, res }),
+          introspection: true,
+          context: ({ req, res }) => ({ req, res }),
       }),
     }),
     ThrottlerModule.forRootAsync({

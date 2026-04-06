@@ -30,29 +30,42 @@ import { GrpcCallLog } from './grpc-call-logs/entities/grpc-call-log.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 5432),
-        username: config.get('DB_USER', 'postgres'),
-        password: config.get('DB_PASS', 'postgres'),
-        database: config.get('DB_NAME', 'grpc_ide'),
-        entities: [
-          User,
-          ProtoSchema,
-          Environment,
-          SavedRequest,
-          RequestCollection,
-          RequestHistory,
-          GrpcCallLog,
-        ],
-        synchronize: config.get('NODE_ENV') !== 'production',
-        logging: config.get('NODE_ENV') === 'development',
+      TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (config: ConfigService) => {
+              const isProd = config.get<string>('NODE_ENV') === 'production';
+              const databaseUrl = config.get<string>('DATABASE_URL');
+              const dbSync =
+                  config.get<string>('DB_SYNC', isProd ? 'false' : 'true') === 'true';
+
+              return {
+                  type: 'postgres',
+                  ...(databaseUrl
+                      ? {
+                          url: databaseUrl,
+                      }
+                      : {
+                          host: config.get<string>('DB_HOST', 'localhost'),
+                          port: Number(config.get<string>('DB_PORT', '5432')),
+                          username: config.get<string>('DB_USER', 'postgres'),
+                          password: config.get<string>('DB_PASS', 'postgres'),
+                          database: config.get<string>('DB_NAME', 'grpc_ide'),
+                      }),
+                  entities: [
+                      User,
+                      ProtoSchema,
+                      Environment,
+                      SavedRequest,
+                      RequestCollection,
+                      RequestHistory,
+                      GrpcCallLog,
+                  ],
+                  synchronize: dbSync,
+                  logging: !isProd,
+              };
+          },
       }),
-    }),
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       imports: [ConfigModule],

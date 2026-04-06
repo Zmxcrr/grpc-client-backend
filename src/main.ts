@@ -25,7 +25,8 @@ async function bootstrap() {
                 'http://localhost:5173',
                 'http://127.0.0.1:5173',
                 'http://[::1]:5173',
-            ]);
+                process.env.FRONTEND_URL,
+            ].filter(Boolean));
 
             if (!origin || allowed.has(origin)) {
                 callback(null, true);
